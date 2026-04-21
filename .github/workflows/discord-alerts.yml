@@ -1,0 +1,67 @@
+name: Discord Alerts - Registro de Gastos
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [closed]
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Enviar alerta no Discord (Push)
+        if: github.event_name == 'push'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{
+            \"username\": \"Registro de Gastos Bot\",
+            \"avatar_url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\",
+            \"embeds\": [{
+              \"title\": \"💸 Novo Push no Registro de Gastos!\",
+              \"description\": \"Uma atualização foi enviada para o repositório.\",
+              \"color\": 15105570,
+              \"fields\": [
+                { \"name\": \"📁 Repositório\", \"value\": \"FelpoWM/Registro-de-gastos\", \"inline\": true },
+                { \"name\": \"👤 Autor\", \"value\": \"${{ github.actor }}\", \"inline\": true },
+                { \"name\": \"🌿 Branch\", \"value\": \"main\", \"inline\": true },
+                { \"name\": \"📝 Commit\", \"value\": \"`${{ github.sha }}`\", \"inline\": false },
+                { \"name\": \"💬 Mensagem\", \"value\": \"${{ github.event.head_commit.message }}\", \"inline\": false }
+              ],
+              \"footer\": { \"text\": \"Registro de Gastos • GitHub Actions\" }
+            }]
+          }" \
+          $DISCORD_WEBHOOK_URL
+
+      - name: Enviar alerta no Discord (Merge de PR)
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{
+            \"username\": \"Registro de Gastos Bot\",
+            \"avatar_url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\",
+            \"embeds\": [{
+              \"title\": \"✅ PR Mergeado no Registro de Gastos!\",
+              \"description\": \"Uma nova funcionalidade foi integrada à branch main.\",
+              \"color\": 5763719,
+              \"fields\": [
+                { \"name\": \"📁 Repositório\", \"value\": \"FelpoWM/Registro-de-gastos\", \"inline\": true },
+                { \"name\": \"👤 Autor\", \"value\": \"${{ github.actor }}\", \"inline\": true },
+                { \"name\": \"🔀 Pull Request\", \"value\": \"${{ github.event.pull_request.title }}\", \"inline\": false },
+                { \"name\": \"🔗 Link\", \"value\": \"${{ github.event.pull_request.html_url }}\", \"inline\": false }
+              ],
+              \"footer\": { \"text\": \"Registro de Gastos • GitHub Actions\" }
+            }]
+          }" \
+          $DISCORD_WEBHOOK_URL
